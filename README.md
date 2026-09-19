@@ -286,31 +286,6 @@ event at write time.
   third-party scripts; a production build should move to an `httpOnly`,
   `SameSite` cookie with CSRF protection instead.
 
-## AI Tools Used
-
-ChatGPT:
-Claude: Used throughout, via Claude Code, to implement the backend
-(schema, auth/tenant-isolation middleware, routes) and the frontend (React
-pages, UI/branding, API client) from the architecture and design direction
-I gave it, and this README, and to run the live verification probes
-(`curl` cross-firm tests, a scripted Playwright pass through the UI)
-described above.
-Gemini:
-Cursor:
-GitHub Copilot:
-
-**How AI was used**: I directed the architecture and design throughout,
-the data model decisions (e.g. denormalizing `firm_id`, the 404-not-403
-isolation behavior, insert-only audit log), the tenant-isolation approach,
-and the UI direction (branding, palette, typography), and used Claude Code
-as the builder to implement it end to end: backend, frontend, and the live
-verification steps referenced in this README (the `curl` cross-tenant
-probes and the browser screenshots). I reviewed the resulting code and
-screenshots myself before treating anything as "done"; a passing screenshot
-or a 200 response isn't proof by itself, so the cross-firm checks were run
-as real requests against the running server, not inferred from reading the
-code.
-
 ## What would I improve with one more week?
 
 The single highest-value next step is moving tenant isolation from "every
