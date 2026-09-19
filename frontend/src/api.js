@@ -28,6 +28,7 @@ async function request(path, { method = 'GET', body, isForm = false } = {}) {
 
 export const api = {
   login: (email, password) => request('/api/auth/login', { method: 'POST', body: { email, password } }),
+  updateProfile: (name) => request('/api/auth/me', { method: 'PATCH', body: { name } }),
   getClients: () => request('/api/clients'),
   createClient: (name) => request('/api/clients', { method: 'POST', body: { name } }),
   getClient: (clientId) => request(`/api/clients/${clientId}`),

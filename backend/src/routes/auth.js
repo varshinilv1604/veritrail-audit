@@ -1,7 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const db = require('../db');
-const { issueToken } = require('../auth');
+const { issueToken, requireAuth } = require('../auth');
 
 const router = express.Router();
 
@@ -26,6 +26,21 @@ router.post('/login', (req, res) => {
     user: { id: user.id, name: user.name, email: user.email, role: user.role },
     firm,
   });
+});
+
+// Any signed-in user (staff, reviewer, or admin) can edit their own display
+// name. Scoped to req.user.userId from the verified JWT, never a body/query
+// id, so a user can only ever edit themselves.
+router.patch('/me', requireAuth, (req, res) => {
+  const { name } = req.body || {};
+  if (!name || !name.trim()) {
+    return res.status(400).json({ error: 'Name is required' });
+  }
+
+  db.prepare('UPDATE users SET name = ? WHERE id = ?').run(name.trim(), req.user.userId);
+
+  const user = db.prepare('SELECT id, name, email, role FROM users WHERE id = ?').get(req.user.userId);
+  res.json({ user });
 });
 
 module.exports = router;

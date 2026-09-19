@@ -132,8 +132,7 @@ router.post('/:id/upload', requireRole('staff', 'admin'), upload.single('file'),
     firmId: req.user.firmId,
     documentId: doc.id,
     actorUserId: req.user.userId,
-    action: isRevision ? 'uploaded revised document' : 'uploaded document',
-    comment: req.file.originalname,
+    action: isRevision ? 'uploaded revised document' : `uploaded ${req.file.originalname}`,
   });
 
   res.json({ ok: true });
@@ -182,7 +181,7 @@ router.post('/:id/approve', requireRole('reviewer', 'admin'), (req, res) => {
     firmId: req.user.firmId,
     documentId: doc.id,
     actorUserId: req.user.userId,
-    action: 'approved document',
+    action: `approved ${doc.file_name || doc.doc_type}`,
   });
 
   res.json({ ok: true });

@@ -17,7 +17,17 @@ const REQUIRED_DOCS = [
 // listing or guessing their way into Firm B's clients.
 router.get('/', (req, res) => {
   const clients = db
-    .prepare('SELECT id, name, created_at FROM clients WHERE firm_id = ? ORDER BY created_at DESC')
+    .prepare(
+      `SELECT c.id, c.name, c.created_at,
+              COUNT(d.id) AS total_documents,
+              SUM(CASE WHEN d.status = 'Approved' THEN 1 ELSE 0 END) AS approved_documents,
+              SUM(CASE WHEN d.status = 'Correction Required' THEN 1 ELSE 0 END) AS correction_required_documents
+       FROM clients c
+       LEFT JOIN documents d ON d.client_id = c.id
+       WHERE c.firm_id = ?
+       GROUP BY c.id
+       ORDER BY c.created_at DESC`
+    )
     .all(req.user.firmId);
   res.json(clients);
 });
@@ -46,7 +56,12 @@ router.post('/', requireRole('staff', 'admin'), (req, res) => {
   }
 
   const client = db.prepare('SELECT id, name, created_at FROM clients WHERE id = ?').get(clientId);
-  res.status(201).json(client);
+  res.status(201).json({
+    ...client,
+    total_documents: REQUIRED_DOCS.length,
+    approved_documents: 0,
+    correction_required_documents: 0,
+  });
 });
 
 router.get('/:id/documents', (req, res) => {

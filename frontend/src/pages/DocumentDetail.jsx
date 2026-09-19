@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { api } from '../api';
 import { useAuth } from '../AuthContext';
 import StatusBadge from '../components/StatusBadge';
+import { IconUpload, IconEye, IconCheckCircle, IconAlert, IconFile } from '../components/icons';
 
 function formatWhen(value) {
   if (!value) return '';
@@ -10,6 +11,14 @@ function formatWhen(value) {
   // a timezone suffix; append Z so the browser doesn't parse them as local.
   const iso = value.includes('T') ? value : value.replace(' ', 'T') + 'Z';
   return new Date(iso).toLocaleString();
+}
+
+function timelineIcon(action) {
+  if (action.startsWith('uploaded')) return { icon: <IconUpload />, cls: 'timeline-icon--upload' };
+  if (action.startsWith('started reviewing')) return { icon: <IconEye />, cls: 'timeline-icon--review' };
+  if (action.startsWith('approved')) return { icon: <IconCheckCircle />, cls: 'timeline-icon--approve' };
+  if (action === 'requested correction') return { icon: <IconAlert />, cls: 'timeline-icon--correction' };
+  return { icon: <IconFile />, cls: 'timeline-icon--upload' };
 }
 
 export default function DocumentDetail() {
@@ -79,10 +88,19 @@ export default function DocumentDetail() {
   return (
     <div className="page">
       <div className="breadcrumbs">
-        <Link to="/">Clients</Link> / <Link to={`/clients/${doc.client.id}`}>{doc.client.name}</Link> / {doc.docType}
+        <Link to="/">Clients</Link>
+        <span className="sep">/</span>
+        <Link to={`/clients/${doc.client.id}`}>{doc.client.name}</Link>
+        <span className="sep">/</span>
+        <span className="current">{doc.docType}</span>
       </div>
-      <h1>{doc.docType}</h1>
-      <div style={{ marginBottom: 20 }}><StatusBadge status={doc.status} /></div>
+      <div className="page-header">
+        <div>
+          <h1>{doc.docType}</h1>
+          <p className="subtitle">{doc.client.name}</p>
+        </div>
+        <StatusBadge status={doc.status} />
+      </div>
 
       {error && <div className="error-box">{error}</div>}
 
@@ -105,7 +123,7 @@ export default function DocumentDetail() {
             <div className="label">File</div>
             <div className="value">
               {doc.fileName ? (
-                <button className="link-btn" onClick={() => api.downloadFile(doc.id, doc.fileName)} style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', padding: 0, font: 'inherit' }}>
+                <button className="link-btn" onClick={() => api.downloadFile(doc.id, doc.fileName)}>
                   {doc.fileName}
                 </button>
               ) : '-'}
@@ -124,6 +142,7 @@ export default function DocumentDetail() {
             <>
               <input type="file" ref={fileInputRef} onChange={handleFileChosen} style={{ display: 'none' }} />
               <button className="btn btn-primary" disabled={busy} onClick={() => fileInputRef.current.click()}>
+                <IconUpload width={16} height={16} />
                 {doc.status === 'Correction Required' ? 'Upload revised document' : 'Upload document'}
               </button>
             </>
@@ -131,17 +150,17 @@ export default function DocumentDetail() {
 
           {canReview && doc.status === 'Uploaded' && (
             <button className="btn btn-primary" disabled={busy} onClick={() => runAction(() => api.startReview(docId))}>
-              Start review
+              <IconEye width={16} height={16} /> Start review
             </button>
           )}
 
           {canReview && doc.status === 'Under Review' && (
             <>
               <button className="btn btn-primary" disabled={busy} onClick={() => runAction(() => api.approveDocument(docId))}>
-                Approve
+                <IconCheckCircle width={16} height={16} /> Approve
               </button>
               <button className="btn btn-danger" disabled={busy} onClick={() => setShowCorrectionForm((v) => !v)}>
-                Request correction
+                <IconAlert width={16} height={16} /> Request correction
               </button>
             </>
           )}
@@ -168,18 +187,21 @@ export default function DocumentDetail() {
         <h2>Audit history</h2>
         {doc.history.length === 0 && <div className="empty-state">No activity yet.</div>}
         <ul className="timeline">
-          {doc.history.map((event) => (
-            <li key={event.id}>
-              <div className="dot" />
-              <div className="body">
-                <div className="action">{event.actor_name} {event.action}</div>
-                <div className="when">{formatWhen(event.created_at)} &middot; {event.actor_role}</div>
-                {event.comment && event.action === 'requested correction' && (
-                  <div className="comment">Reason: {event.comment}</div>
-                )}
-              </div>
-            </li>
-          ))}
+          {doc.history.map((event) => {
+            const { icon, cls } = timelineIcon(event.action);
+            return (
+              <li key={event.id}>
+                <div className={`icon-circle ${cls}`}>{icon}</div>
+                <div className="body">
+                  <div className="action">{event.actor_name} {event.action}</div>
+                  <div className="when">{formatWhen(event.created_at)} &middot; {event.actor_role}</div>
+                  {event.comment && event.action === 'requested correction' && (
+                    <div className="comment"><strong>Reason:</strong> {event.comment}</div>
+                  )}
+                </div>
+              </li>
+            );
+          })}
         </ul>
       </div>
     </div>
